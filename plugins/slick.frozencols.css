@@ -1,0 +1,44 @@
+.slick-pane {
+	position: absolute;
+	outline: 0;
+	overflow: hidden;
+	width: 100%;
+}
+
+.slick-pane-header {
+	display: block;
+}
+
+.slick-header {
+	overflow: hidden;
+	position: relative;
+}
+
+.slick-headerrow {
+	overflow: hidden;
+	position: relative;
+}
+
+.slick-top-panel-scroller {
+	overflow: hidden;
+	position: relative;
+}
+
+.slick-top-panel {
+	width:10000px
+}
+
+.slick-viewport {
+	position: relative;
+	outline: 0;
+	width: 100%;
+}
+.slick-resizable-handle-hover {
+	background-color: #ccc;
+}
+.grid-canvas {
+  position: relative;
+  outline: 0;
+	overflow: hidden;
+}
+
