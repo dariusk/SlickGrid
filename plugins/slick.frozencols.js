@@ -73,7 +73,7 @@
     var $headerRowScrollContainer;
 
     function init(grid) {
-      options = $.extend(true, {}, _defaults, options);
+      options = $.extend(true, {}, _defaults, grid.getOptions());
       $container = $(options.container);
       _grid = grid;
       _grid.setOptions(options);
@@ -147,12 +147,27 @@
 
       getViewportWidth();
       getViewportHeight();
+
+      setFrozenOptions();
+      setPaneVisibility();
+      setScroller();
+      setOverflow();
+
+      if (jQuery.fn.mousewheel && options.frozenColumn > -1) {
+        if ( !( options.frozenBottom ) && ( hasFrozenRows ) ) {
+          $viewportBottomL.mousewheel(handleMouseWheel);
+        } else {
+          $viewportTopL.mousewheel(handleMouseWheel);
+        }
+      }
+
     }
 
     function destroy() {
     }
 
     function getViewportHeight() {
+      console.log(options);
       if (options.autoHeight) {
         viewportH = options.rowHeight
           * ( getDataLength()
@@ -182,6 +197,150 @@
 
     function getViewportWidth() {
       viewportW = parseFloat($.css($container[0], "width", true));
+    }
+
+    function getVBoxDelta($el) {
+      var p = ["borderTopWidth", "borderBottomWidth", "paddingTop", "paddingBottom"];
+      var delta = 0;
+      $.each(p, function (n, val) {
+        delta += parseFloat($el.css(val)) || 0;
+      });
+      return delta;
+    }
+
+    function setFrozenOptions() {
+      options.frozenColumn = ( options.frozenColumn >= 0
+          && options.frozenColumn < columns.length
+          )
+        ? parseInt(options.frozenColumn)
+        : -1;
+
+      options.frozenRow = ( options.frozenRow >= 0
+          && options.frozenRow < numVisibleRows
+          )
+        ? parseInt(options.frozenRow)
+        : -1;
+
+      if ( options.frozenRow > -1 ) {
+        hasFrozenRows = true;
+        frozenRowsHeight = ( options.frozenRow ) * options.rowHeight;
+
+        var dataLength = getDataLength() || this.data.length;
+
+        actualFrozenRow = ( options.frozenBottom )
+          ? ( dataLength - options.frozenRow )
+          : options.frozenRow;
+      } else {
+        hasFrozenRows = false;
+      }
+    }
+
+    function setPaneVisibility() {
+      if (options.frozenColumn > -1) {
+        $paneHeaderR.show();
+        $paneTopR.show();
+
+        if ( hasFrozenRows ) {
+          $paneBottomL.show();
+          $paneBottomR.show();
+        } else {
+          $paneBottomR.hide();
+          $paneBottomL.hide();
+        }
+      } else {
+        $paneHeaderR.hide();
+        $paneTopR.hide();
+        $paneBottomR.hide();
+
+        if ( hasFrozenRows ) {
+          $paneBottomL.show();
+        } else {
+          $paneBottomR.hide();
+          $paneBottomL.hide();
+        }
+      }
+    }
+
+    function setOverflow() {
+      $viewportTopL.css({
+        'overflow-x': ( options.frozenColumn > -1 ) ? ( hasFrozenRows ) ? 'hidden' : 'scroll' : ( hasFrozenRows ) ? 'hidden' : 'auto',
+      'overflow-y': ( options.frozenColumn > -1 ) ? ( hasFrozenRows ) ? 'hidden' : 'hidden' : ( hasFrozenRows ) ? 'scroll' : 'auto'
+      });
+
+      $viewportTopR.css({
+        'overflow-x': ( options.frozenColumn > -1 ) ? ( hasFrozenRows ) ? 'hidden' : 'scroll' : ( hasFrozenRows ) ? 'hidden' : 'auto',
+        'overflow-y': ( options.frozenColumn > -1 ) ? ( hasFrozenRows ) ? 'scroll' : 'auto' : ( hasFrozenRows ) ? 'scroll' : 'auto'
+      });
+
+      $viewportBottomL.css({
+        'overflow-x': ( options.frozenColumn > -1 ) ? ( hasFrozenRows ) ? 'scroll' : 'auto' : ( hasFrozenRows ) ? 'auto' : 'auto',
+        'overflow-y': ( options.frozenColumn > -1 ) ? ( hasFrozenRows ) ? 'hidden' : 'hidden' : ( hasFrozenRows ) ? 'scroll' : 'auto'
+      });
+
+      $viewportBottomR.css({
+        'overflow-x': ( options.frozenColumn > -1 ) ? ( hasFrozenRows ) ? 'scroll' : 'auto' : ( hasFrozenRows ) ? 'auto' : 'auto',
+        'overflow-y': ( options.frozenColumn > -1 ) ? ( hasFrozenRows ) ? 'auto' : 'auto' : ( hasFrozenRows ) ? 'auto' : 'auto'
+      });
+    }
+
+    function setScroller() {
+      if ( options.frozenColumn > -1 ) {
+        $headerScrollContainer = $headerScrollerR;
+        $headerRowScrollContainer = $headerRowScrollerR;
+
+        if ( hasFrozenRows ) {
+          if ( options.frozenBottom ) {
+            $viewportScrollContainerX = $viewportBottomR;
+            $viewportScrollContainerY = $viewportTopR;
+          } else {
+            $viewportScrollContainerX = $viewportScrollContainerY = $viewportBottomR;
+          }
+        } else {
+          $viewportScrollContainerX = $viewportScrollContainerY = $viewportTopR;
+        }
+      } else {
+        $headerScrollContainer = $headerScrollerL;
+        $headerRowScrollContainer = $headerRowScrollerL;
+
+        if ( hasFrozenRows ) {
+          if ( options.frozenBottom ) {
+            $viewportScrollContainerX = $viewportBottomL;
+            $viewportScrollContainerY = $viewportTopL;
+          } else {
+            $viewportScrollContainerX = $viewportScrollContainerY = $viewportBottomL;
+          }
+        } else {
+          $viewportScrollContainerX = $viewportScrollContainerY = $viewportTopL;
+        }
+      }
+    }
+
+    function getActiveCanvasNode( element ) {
+      setActiveCanvasNode( element );
+
+      return $activeCanvasNode[0];
+    }
+
+    function setActiveCanvasNode( element ) {
+      if ( element ) {
+        $activeCanvasNode = $( element.target ).closest( '.grid-canvas' );
+      }
+    }
+
+    function getViewportNode() {
+      return $viewport[0];
+    }
+
+    function getActiveViewportNode( element ) {
+      setActiveViewPortNode( element );
+
+      return $activeViewportNode[0];
+    }
+
+    function setActiveViewportNode( element ) {
+      if ( element ) {
+        $activeViewportNode = $( element.target ).closest( '.slick-viewport' );
+      }
     }
 
     $.extend(this, {
